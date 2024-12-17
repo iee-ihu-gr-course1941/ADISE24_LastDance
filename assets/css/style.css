@@ -1,0 +1,408 @@
+/* Reset some default styles for consistency */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/*index.php*/
+
+.wrapper-index {
+  background-color: #219b9d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Form container styling */
+.text-index {
+  background: #ffffff49;
+  padding: 30px 40px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+/* Form heading (LOGIN title and image) */
+.text-index h2 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.text-index img {
+  height: 100%;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+/* Error message styling */
+.text-index .error {
+  color: red;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+/* Input fields styling */
+.text-index label {
+  display: block;
+  text-align: left;
+  font-size: 14px;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+.text-index input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+/* Button styling */
+.text-index button {
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.text-index button:hover {
+  background-color: #0056b3;
+}
+
+/*rules.html*/
+
+.rules-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-image: url("../images/attax.jpg");
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+}
+
+h1 {
+  font-size: 2.5em;
+  text-align: center;
+  padding-top: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 70%;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.description {
+  text-align: left;
+}
+
+.description ul {
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+.description li {
+  margin: 10px 0;
+  font-size: 1.2em;
+}
+
+.description-button {
+  display: inline-block;
+  padding: 15px 30px;
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #fff;
+  background-color: #ff0000;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.1);
+  margin-top: 30px;
+}
+
+.description-button:hover {
+  background-color: #a00101;
+  transform: translateY(-5px);
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.15);
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.description-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(192, 6, 6, 0.5);
+}
+
+.description-logout {
+  display: inline-block;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  padding: 8px 15px;
+  margin-top: 1rem;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover Effect */
+.description-logout:hover {
+  background-color: #0056b3;
+  color: #ffffff;
+}
+
+/* Active Links */
+.description-logout:active {
+  background-color: #003366;
+  color: #ffffff;
+  transform: scale(0.98);
+}
+
+/*player.html*/
+
+.player-page {
+  font-family: Arial, sans-serif;
+  background: url("../images/attax.jpg") no-repeat center center fixed;
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.player-page h1 {
+  color: #eeeeee;
+  font-size: 4em;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.button-container {
+  display: flex;
+  gap: 20px;
+}
+
+.side-button {
+  display: inline-block; /* Makes the anchor behave like a block-level element for padding and sizing */
+  text-decoration: none; /* Removes the default underline of anchor tags */
+  font-size: 1.5em;
+  padding: 20px 40px;
+  border: none; /* Not necessary for anchors, but retained for consistency */
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: center; /* Centers the text inside the anchor */
+  color: white; /* Ensures text color is white */
+}
+
+.side-button.red {
+  background-color: #e74c3c;
+}
+
+.side-button.red:hover {
+  background-color: #c0392b; /* Slightly darker red on hover */
+}
+
+.side-button.blue {
+  background-color: #3498db;
+}
+
+.side-button.blue:hover {
+  background-color: #2980b9; /* Slightly darker blue on hover */
+}
+
+/*game.html*/
+
+/* General layout for the game page */
+.page-container {
+  display: flex;
+  height: 100vh;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+  background-color: #219b9d; /* Light background for contrast */
+}
+
+/* Side navigation for game information */
+.side-nav {
+  width: 250px;
+  background-color: #ffffff49;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border-right: 2px solid #ccc;
+}
+
+.side-nav h2 {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.side-nav p {
+  font-size: 1em;
+  color: #555;
+  margin: 5px 0;
+}
+
+.side-nav span {
+  font-weight: bold;
+  color: #222;
+}
+
+/* Main game container */
+.game-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: #219b9d; /* Light background for the game area */
+}
+
+.game-container h1 {
+  margin-bottom: 20px;
+  font-size: 2em;
+  color: #e4e4e4;
+}
+
+/* Game board styling */
+.game-board {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr); /* 8 rows */
+  grid-template-columns: repeat(7, 1fr); /* 8 columns */
+  gap: 2px; /* Small gap between cells */
+  width: 400px; /* Fixed board width */
+  height: 400px; /* Fixed board height */
+  background: #219b9d; /* Background for the board */
+  border: 2px solid #444;
+  border-radius: 8px;
+}
+
+/* Styling for each cell on the board */
+.game-cell {
+  position: relative;
+  background: #fff;
+  border: 1px solid #aaa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.pawn {
+  width: 60%;
+  height: 60%;
+  background-color: #000;
+  border-radius: 50%;
+  margin: auto;
+}
+
+.pawn.red {
+  background-color: red;
+}
+
+.pawn.blue {
+  background-color: blue;
+}
+
+/* Hover effect for interactable cells */
+.game-cell:hover {
+  background: #e0e0e0;
+  transform: scale(1.05);
+}
+
+/* Add responsiveness for smaller screens */
+@media (max-width: 768px) {
+  .page-container {
+    flex-direction: column;
+  }
+
+  .side-nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 2px solid #ccc;
+  }
+
+  .game-container {
+    padding: 10px;
+  }
+
+  .game-board {
+    width: 300px; /* Adjust size for smaller screens */
+    height: 300px;
+  }
+
+  .game-cell {
+    font-size: 12px;
+  }
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .page-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .side-nav {
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .game-container {
+    width: 100%;
+  }
+
+  .game-board {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
+
+/*extra*/
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
