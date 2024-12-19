@@ -92,6 +92,98 @@ function updateBoardFromState(gameState) {
 
 let playerSide;
 
+// Convert all adjacent opponent pawns after a move
+function convertAdjacentPawns(destIndex, currentPlayer, gameState) {
+  const columns = 7; // Fixed board size: 7x7 grid
+  const opponentPlayer = currentPlayer === "red" ? "blue" : "red";
+
+  // Helper function to find adjacent cell indices
+  function getAdjacentIndices(index) {
+    const adjacents = [];
+    const row = Math.floor(index / columns);
+    const col = index % columns;
+
+    const directions = [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1], // Orthogonal directions
+      [-1, -1],
+      [-1, 1],
+      [1, -1],
+      [1, 1], // Diagonal directions
+    ];
+
+    directions.forEach(([dr, dc]) => {
+      const newRow = row + dr;
+      const newCol = col + dc;
+      if (newRow >= 0 && newRow < 7 && newCol >= 0 && newCol < 7) {
+        adjacents.push(newRow * columns + newCol);
+      }
+    });
+
+    return adjacents;
+  }
+
+  // Get adjacent cells
+  const adjacentIndices = getAdjacentIndices(destIndex);
+
+  // Convert adjacent opponent pawns
+  adjacentIndices.forEach((adjIndex) => {
+    const cell = document.querySelector(`[data-index='${adjIndex}']`);
+    if (cell.firstChild && cell.firstChild.classList.contains(opponentPlayer)) {
+      // Replace opponent pawn with current player's pawn
+      cell.innerHTML = ""; // Clear existing pawn
+      const newPawn = createPawn(currentPlayer); // New pawn for current player
+      cell.appendChild(newPawn);
+    }
+  });
+
+  // Update game state after conversions
+  gameState.redPawns = updatePawnList("red");
+  gameState.bluePawns = updatePawnList("blue");
+  saveGameState(gameState);
+}
+
+// Check if the current player has any legal moves
+function hasLegalMoves(playerColor, gameState) {
+  const pawns =
+    playerColor === "red" ? gameState.redPawns : gameState.bluePawns;
+  const columns = 7;
+
+  return pawns.some((index) => {
+    const row = Math.floor(index / columns);
+    const col = index % columns;
+
+    const directions = [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1], // Orthogonal
+      [-1, -1],
+      [-1, 1],
+      [1, -1],
+      [1, 1], // Diagonal
+    ];
+
+    return directions.some(([dr, dc]) => {
+      const newRow = row + dr;
+      const newCol = col + dc;
+      const newIndex = newRow * columns + newCol;
+
+      return (
+        newRow >= 0 &&
+        newRow < 7 &&
+        newCol >= 0 &&
+        newCol < 7 &&
+        !gameState.redPawns.includes(newIndex) &&
+        !gameState.bluePawns.includes(newIndex)
+      );
+    });
+  });
+}
+
+// Updated handleCellClick to include pawn conversions and passing turns
 function handleCellClick(cell) {
   const gameState = loadGameState();
   const index = parseInt(cell.dataset.index, 10);
@@ -101,7 +193,7 @@ function handleCellClick(cell) {
     if (
       cell.firstChild &&
       cell.firstChild.classList.contains(gameState.currentTurn) &&
-      cell.firstChild.classList.contains(playerSide) // Enforce player-side rule
+      cell.firstChild.classList.contains(playerSide)
     ) {
       selectedCell = cell;
       cell.classList.add("selected");
@@ -111,43 +203,49 @@ function handleCellClick(cell) {
       );
     }
   } else {
-    // Allow movement logic only if the piece belongs to the player's side
     const sourceIndex = parseInt(selectedCell.dataset.index, 10);
     const distance = calculateDistance(sourceIndex, index);
 
     if (
       selectedCell.firstChild &&
-      selectedCell.firstChild.classList.contains(playerSide)
+      selectedCell.firstChild.classList.contains(playerSide) &&
+      !cell.firstChild // Ensure destination is empty
     ) {
       if (distance === 1) {
-        // Adjacent move: Leave a piece at the source
+        // Adjacent move: Duplicate pawn
         const newPawn = createPawn(gameState.currentTurn);
         cell.appendChild(newPawn);
       } else if (distance === 2) {
-        // Two-space move: Move the piece to the destination
+        // Two-space move: Move pawn
         cell.appendChild(selectedCell.firstChild);
       } else {
-        alert(
-          "Invalid move! You can only move one or two spaces in any direction."
-        );
+        alert("Invalid move! You can only move one or two spaces.");
         clearSelection();
         return;
       }
 
-      // Update the game state
-      if (gameState.currentTurn === "red") {
-        gameState.redPawns = updatePawnList("red");
-      } else {
-        gameState.bluePawns = updatePawnList("blue");
-      }
-      gameState.currentTurn = gameState.currentTurn === "red" ? "blue" : "red";
+      // Convert adjacent pawns
+      convertAdjacentPawns(index, gameState.currentTurn, gameState);
 
+      // Check if the next player has legal moves
+      gameState.currentTurn = gameState.currentTurn === "red" ? "blue" : "red";
+      if (!hasLegalMoves(gameState.currentTurn, gameState)) {
+        alert(
+          `${gameState.currentTurn.toUpperCase()} has no legal moves and passes the turn.`
+        );
+        // Skip turn if no moves available
+        gameState.currentTurn =
+          gameState.currentTurn === "red" ? "blue" : "red";
+      }
+
+      // Save and update game state
       saveGameState(gameState);
       updateBoardFromState(gameState);
+      clearSelection();
     } else {
-      alert("You cannot move your opponent's pieces!");
+      alert("Invalid move or destination occupied!");
+      clearSelection();
     }
-    clearSelection();
   }
 }
 
