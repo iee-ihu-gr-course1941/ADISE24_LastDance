@@ -17,7 +17,6 @@ function createGameBoard(rows, columns, playerSide) {
 
   const initialState = loadGameState();
   console.log("Initial state loaded:", initialState);
-
   updateBoardFromState(initialState);
 }
 
@@ -37,6 +36,8 @@ function loadGameState() {
     redPawns: [0, 48],
     bluePawns: [6, 42],
     currentTurn: "red",
+    redScore: 0,
+    blueScore: 0,
   };
 
   const savedState = localStorage.getItem("gameState");
@@ -79,25 +80,27 @@ function updateBoardFromState(gameState) {
     cells[index].appendChild(bluePawn);
   });
 
-  console.log("Finding player-turn element...");
+  // Update the UI elements
   const playerTurnElement = document.getElementById("player-turn");
   if (playerTurnElement) {
     playerTurnElement.textContent = `Turn: ${gameState.currentTurn.toUpperCase()}`;
-  } else {
-    console.warn(
-      "Ensure there is an element with id='player-turn' in your HTML."
-    );
+  }
+
+  const redScore = document.getElementById("red-score");
+  const blueScore = document.getElementById("blue-score");
+
+  if (redScore && blueScore) {
+    redScore.textContent = gameState.redScore;
+    blueScore.textContent = gameState.blueScore;
   }
 }
 
-let playerSide;
-
 // Convert all adjacent opponent pawns after a move
 function convertAdjacentPawns(destIndex, currentPlayer, gameState) {
-  const columns = 7; // Fixed board size: 7x7 grid
+  const columns = 7;
   const opponentPlayer = currentPlayer === "red" ? "blue" : "red";
 
-  // Helper function to find adjacent cell indices
+  // Helper function to find adjacent cells
   function getAdjacentIndices(index) {
     const adjacents = [];
     const row = Math.floor(index / columns);
@@ -125,21 +128,27 @@ function convertAdjacentPawns(destIndex, currentPlayer, gameState) {
     return adjacents;
   }
 
-  // Get adjacent cells
-  const adjacentIndices = getAdjacentIndices(destIndex);
+  // Helper function to recursively convert adjacent opponent pawns
+  function recursivelyConvert(index) {
+    const adjacentIndices = getAdjacentIndices(index);
+    adjacentIndices.forEach((adjIndex) => {
+      const cell = document.querySelector(`[data-index='${adjIndex}']`);
+      if (
+        cell.firstChild &&
+        cell.firstChild.classList.contains(opponentPlayer)
+      ) {
+        // Replace opponent pawn with current player's pawn
+        cell.innerHTML = "";
+        const newPawn = createPawn(currentPlayer); // New pawn for current player
+        cell.appendChild(newPawn);
 
-  // Convert adjacent opponent pawns
-  adjacentIndices.forEach((adjIndex) => {
-    const cell = document.querySelector(`[data-index='${adjIndex}']`);
-    if (cell.firstChild && cell.firstChild.classList.contains(opponentPlayer)) {
-      // Replace opponent pawn with current player's pawn
-      cell.innerHTML = ""; // Clear existing pawn
-      const newPawn = createPawn(currentPlayer); // New pawn for current player
-      cell.appendChild(newPawn);
-    }
-  });
+        // Recursively convert adjacent opponent pawns
+        recursivelyConvert(adjIndex);
+      }
+    });
+  }
 
-  // Update game state after conversions
+  recursivelyConvert(destIndex);
   gameState.redPawns = updatePawnList("red");
   gameState.bluePawns = updatePawnList("blue");
   saveGameState(gameState);
@@ -212,11 +221,11 @@ function handleCellClick(cell) {
       !cell.firstChild // Ensure destination is empty
     ) {
       if (distance === 1) {
-        // Adjacent move: Duplicate pawn
+        // Adjacent move
         const newPawn = createPawn(gameState.currentTurn);
         cell.appendChild(newPawn);
       } else if (distance === 2) {
-        // Two-space move: Move pawn
+        // Two-space move
         cell.appendChild(selectedCell.firstChild);
       } else {
         alert("Invalid move! You can only move one or two spaces.");
@@ -233,7 +242,6 @@ function handleCellClick(cell) {
         alert(
           `${gameState.currentTurn.toUpperCase()} has no legal moves and passes the turn.`
         );
-        // Skip turn if no moves available
         gameState.currentTurn =
           gameState.currentTurn === "red" ? "blue" : "red";
       }
@@ -284,11 +292,7 @@ window.addEventListener("storage", (event) => {
   if (event.key === "gameState") {
     if (!event.newValue) {
       console.log("Clearing game state from other tabs...");
-      const defaultState = {
-        redPawns: [0, 48],
-        bluePawns: [6, 42],
-        currentTurn: "red",
-      };
+      const defaultState = loadGameState();
       updateBoardFromState(defaultState);
     } else {
       const newState = JSON.parse(event.newValue);
@@ -298,6 +302,7 @@ window.addEventListener("storage", (event) => {
   }
 });
 
+// Listen for page load events
 document.addEventListener("DOMContentLoaded", () => {
   const resetButton = document.getElementById("reset-game");
 
@@ -312,6 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Reset button not found in DOM.");
   }
 
+  // Determine player side from URL params
   const urlParams = new URLSearchParams(window.location.search);
   playerSide = urlParams.get("side");
 
