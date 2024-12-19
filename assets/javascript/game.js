@@ -30,6 +30,11 @@ function createPawn(color) {
 // State variables
 let selectedCell = null;
 
+// Save the game state to localStorage
+function saveGameState(state) {
+  localStorage.setItem("gameState", JSON.stringify(state));
+}
+
 // Load the game state from localStorage or initialize it
 function loadGameState() {
   const defaultState = {
@@ -54,11 +59,7 @@ function loadGameState() {
   }
 }
 
-// Save the game state to localStorage
-function saveGameState(state) {
-  localStorage.setItem("gameState", JSON.stringify(state));
-}
-
+// Update the board based on the game state
 // Update the board based on the game state
 function updateBoardFromState(gameState) {
   const cells = document.querySelectorAll(".game-cell");
@@ -68,7 +69,7 @@ function updateBoardFromState(gameState) {
     return;
   }
 
-  cells.forEach((cell) => (cell.innerHTML = ""));
+  cells.forEach((cell) => (cell.innerHTML = "")); // Clear current pawns
 
   gameState.redPawns.forEach((index) => {
     const redPawn = createPawn("red");
@@ -79,6 +80,11 @@ function updateBoardFromState(gameState) {
     const bluePawn = createPawn("blue");
     cells[index].appendChild(bluePawn);
   });
+
+  // Check if a player has won after the board has been updated
+  if (checkWinningConditions(gameState)) {
+    return; // Stop if there's a winner
+  }
 
   // Update the UI elements
   const playerTurnElement = document.getElementById("player-turn");
@@ -93,65 +99,6 @@ function updateBoardFromState(gameState) {
     redScore.textContent = gameState.redScore;
     blueScore.textContent = gameState.blueScore;
   }
-}
-
-// Convert all adjacent opponent pawns after a move
-function convertAdjacentPawns(destIndex, currentPlayer, gameState) {
-  const columns = 7;
-  const opponentPlayer = currentPlayer === "red" ? "blue" : "red";
-
-  // Helper function to find adjacent cells
-  function getAdjacentIndices(index) {
-    const adjacents = [];
-    const row = Math.floor(index / columns);
-    const col = index % columns;
-
-    const directions = [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1], // Orthogonal directions
-      [-1, -1],
-      [-1, 1],
-      [1, -1],
-      [1, 1], // Diagonal directions
-    ];
-
-    directions.forEach(([dr, dc]) => {
-      const newRow = row + dr;
-      const newCol = col + dc;
-      if (newRow >= 0 && newRow < 7 && newCol >= 0 && newCol < 7) {
-        adjacents.push(newRow * columns + newCol);
-      }
-    });
-
-    return adjacents;
-  }
-
-  // Helper function to recursively convert adjacent opponent pawns
-  function recursivelyConvert(index) {
-    const adjacentIndices = getAdjacentIndices(index);
-    adjacentIndices.forEach((adjIndex) => {
-      const cell = document.querySelector(`[data-index='${adjIndex}']`);
-      if (
-        cell.firstChild &&
-        cell.firstChild.classList.contains(opponentPlayer)
-      ) {
-        // Replace opponent pawn with current player's pawn
-        cell.innerHTML = "";
-        const newPawn = createPawn(currentPlayer); // New pawn for current player
-        cell.appendChild(newPawn);
-
-        // Recursively convert adjacent opponent pawns
-        recursivelyConvert(adjIndex);
-      }
-    });
-  }
-
-  recursivelyConvert(destIndex);
-  gameState.redPawns = updatePawnList("red");
-  gameState.bluePawns = updatePawnList("blue");
-  saveGameState(gameState);
 }
 
 // Check if the current player has any legal moves
@@ -192,10 +139,121 @@ function hasLegalMoves(playerColor, gameState) {
   });
 }
 
-// Updated handleCellClick to include pawn conversions and passing turns
+// Function to convert adjacent pawns after a move
+function convertAdjacentPawns(destIndex, currentPlayer, gameState) {
+  const columns = 7;
+  const opponentPlayer = currentPlayer === "red" ? "blue" : "red";
+
+  // Helper function to find adjacent cells
+  function getAdjacentIndices(index) {
+    const adjacents = [];
+    const row = Math.floor(index / columns);
+    const col = index % columns;
+
+    const directions = [
+      [-1, 0], // Up
+      [1, 0], // Down
+      [0, -1], // Left
+      [0, 1], // Right
+      [-1, -1], // Top-left diagonal
+      [-1, 1], // Top-right diagonal
+      [1, -1], // Bottom-left diagonal
+      [1, 1], // Bottom-right diagonal
+    ];
+
+    directions.forEach(([dr, dc]) => {
+      const newRow = row + dr;
+      const newCol = col + dc;
+      if (newRow >= 0 && newRow < 7 && newCol >= 0 && newCol < 7) {
+        adjacents.push(newRow * columns + newCol);
+      }
+    });
+
+    return adjacents;
+  }
+
+  // Loop through the adjacent cells of the destination
+  const adjacentIndices = getAdjacentIndices(destIndex);
+  adjacentIndices.forEach((adjIndex) => {
+    const cell = document.querySelector(`[data-index='${adjIndex}']`);
+    // Check if the adjacent cell contains an opponent's pawn
+    if (
+      cell.firstChild &&
+      cell.firstChild.classList.contains(opponentPlayer) // Check if the opponent's pawn
+    ) {
+      // Convert the opponent's pawn to the current player's pawn
+      cell.innerHTML = "";
+      const newPawn = createPawn(currentPlayer); // Create a new pawn for the current player
+      cell.appendChild(newPawn);
+    }
+  });
+
+  // Update the pawns list after conversion
+  gameState.redPawns = updatePawnList("red");
+  gameState.bluePawns = updatePawnList("blue");
+
+  // Save the game state after updating
+  saveGameState(gameState);
+}
+
+// Check if there is a winner based on the game state
+function checkWinningConditions(gameState) {
+  const totalCells = 7 * 7; // Fixed 7x7 board
+  const redPawnsCount = gameState.redPawns.length;
+  const bluePawnsCount = gameState.bluePawns.length;
+
+  // Condition 1: Board is filled, the player with most pawns wins
+  if (redPawnsCount + bluePawnsCount === totalCells) {
+    const winner = redPawnsCount > bluePawnsCount ? "red" : "blue";
+    updateScoresAndDisplayWinner(winner);
+    return true; // Stop the game
+  }
+
+  // Condition 2: One player has captured all of the opponent's pawns
+  if (redPawnsCount === 0) {
+    updateScoresAndDisplayWinner("blue");
+    return true; // Stop the game
+  }
+  if (bluePawnsCount === 0) {
+    updateScoresAndDisplayWinner("red");
+    return true; // Stop the game
+  }
+
+  return false; // Game continues
+}
+
+// Update the UI with the score and display the winner
+function updateScoresAndDisplayWinner(winner) {
+  const redScoreElement = document.getElementById("red-score");
+  const blueScoreElement = document.getElementById("blue-score");
+
+  if (winner === "red") {
+    alert("Red wins the game! Congratulations!");
+    redScoreElement.textContent = parseInt(redScoreElement.textContent) + 1;
+  } else if (winner === "blue") {
+    alert("Blue wins the game! Congratulations!");
+    blueScoreElement.textContent = parseInt(blueScoreElement.textContent) + 1;
+  }
+
+  disableMoves();
+}
+
+// Function to disable further moves after the game ends
+function disableMoves() {
+  const cells = document.querySelectorAll(".game-cell");
+  cells.forEach((cell) => cell.removeEventListener("click", handleCellClick));
+}
+
+// Updated handleCellClick to include pawn conversions, passing turns, and checking for the win conditions
+// Updated handleCellClick to include pawn conversions, passing turns, and checking for the win conditions
 function handleCellClick(cell) {
   const gameState = loadGameState();
   const index = parseInt(cell.dataset.index, 10);
+
+  // Ensure the game is not over before proceeding
+  if (checkWinningConditions(gameState)) {
+    return; // Exit if the game is over
+  }
 
   if (selectedCell === null) {
     // Select a pawn if it matches the current player's side
@@ -218,7 +276,7 @@ function handleCellClick(cell) {
     if (
       selectedCell.firstChild &&
       selectedCell.firstChild.classList.contains(playerSide) &&
-      !cell.firstChild // Ensure destination is empty
+      !cell.firstChild // Ensure the destination is empty
     ) {
       if (distance === 1) {
         // Adjacent move
@@ -233,20 +291,27 @@ function handleCellClick(cell) {
         return;
       }
 
-      // Convert adjacent pawns
+      // Convert adjacent opponent pawns (after move)
       convertAdjacentPawns(index, gameState.currentTurn, gameState);
 
-      // Check if the next player has legal moves
+      // Check for any winning conditions after the move
+      if (checkWinningConditions(gameState)) {
+        return; // Exit if the game is over
+      }
+
+      // Switch turns
       gameState.currentTurn = gameState.currentTurn === "red" ? "blue" : "red";
+
+      // Check if the next player has legal moves
       if (!hasLegalMoves(gameState.currentTurn, gameState)) {
         alert(
           `${gameState.currentTurn.toUpperCase()} has no legal moves and passes the turn.`
         );
         gameState.currentTurn =
-          gameState.currentTurn === "red" ? "blue" : "red";
+          gameState.currentTurn === "red" ? "blue" : "red"; // Pass the turn if no moves are available
       }
 
-      // Save and update game state
+      // Save the updated state and update the board
       saveGameState(gameState);
       updateBoardFromState(gameState);
       clearSelection();
@@ -303,6 +368,7 @@ window.addEventListener("storage", (event) => {
 });
 
 // Listen for page load events
+// Listen for page load events
 document.addEventListener("DOMContentLoaded", () => {
   const resetButton = document.getElementById("reset-game");
 
@@ -311,19 +377,19 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Resetting game state...");
       localStorage.removeItem("gameState");
       alert("Game state cleared. Reloading the game.");
-      location.reload();
+      location.reload(); // Reload to clear the board and scores
     });
   } else {
     console.error("Reset button not found in DOM.");
   }
 
-  // Determine player side from URL params
+  // Setup player side
   const urlParams = new URLSearchParams(window.location.search);
   playerSide = urlParams.get("side");
 
   if (!playerSide) {
     alert("No side selected or invalid session! Redirecting...");
-    window.location.href = "player.html";
+    window.location.href = "player.html"; // Redirect to the player selection page
     return;
   }
 
@@ -332,5 +398,8 @@ document.addEventListener("DOMContentLoaded", () => {
     "player-side"
   ).textContent = `Playing as: ${playerSide.toUpperCase()}`;
 
-  createGameBoard(7, 7, playerSide);
+  createGameBoard(7, 7, playerSide); // Create the game board
+
+  const gameState = loadGameState();
+  updateBoardFromState(gameState);
 });
