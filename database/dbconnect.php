@@ -3,7 +3,7 @@
 $sname="localhost";
 $unmae="root";
 $password="";
-$db_name="battleshipproject";
+$db_name="attax";
 
 $conn=mysqli_connect($sname,$unmae,$password,$db_name);
 if(!$conn){

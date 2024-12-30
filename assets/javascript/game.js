@@ -227,6 +227,7 @@ function updateScoresAndDisplayWinner(winner) {
   const redScoreElement = document.getElementById("red-score");
   const blueScoreElement = document.getElementById("blue-score");
 
+  // Update scores and display winner message
   if (winner === "red") {
     alert("Red wins the game! Congratulations!");
     redScoreElement.textContent = parseInt(redScoreElement.textContent) + 1;
@@ -234,6 +235,14 @@ function updateScoresAndDisplayWinner(winner) {
     alert("Blue wins the game! Congratulations!");
     blueScoreElement.textContent = parseInt(blueScoreElement.textContent) + 1;
   }
+
+  // Save updated scores in localStorage
+  const redScore = parseInt(redScoreElement.textContent);
+  const blueScore = parseInt(blueScoreElement.textContent);
+
+  // Store in localStorage
+  localStorage.setItem("redScore", redScore);
+  localStorage.setItem("blueScore", blueScore);
 
   disableMoves();
 }
@@ -244,10 +253,25 @@ function disableMoves() {
   cells.forEach((cell) => cell.removeEventListener("click", handleCellClick));
 }
 
-// Updated handleCellClick to include pawn conversions, passing turns, and checking for the win conditions
-// Updated handleCellClick to include pawn conversions, passing turns, and checking for the win conditions
+function resetScores() {
+  // Reset scores in localStorage
+  localStorage.setItem("redScore", 0);
+  localStorage.setItem("blueScore", 0);
+
+  // Update the score display elements
+  const redScoreElement = document.getElementById("red-score");
+  const blueScoreElement = document.getElementById("blue-score");
+
+  redScoreElement.textContent = 0;
+  blueScoreElement.textContent = 0;
+
+  // Display reset confirmation
+  alert("Scores have been reset to 0.");
+}
+
 function handleCellClick(cell) {
   const gameState = loadGameState();
+  saveGameStateToAPI(gameState);
   const index = parseInt(cell.dataset.index, 10);
 
   // Ensure the game is not over before proceeding
@@ -352,6 +376,60 @@ function clearSelection() {
   }
 }
 
+function loadGameStateFromAPI() {
+  fetch("fetch_game_state.php")
+    .then((response) => {
+      // Check if response is not OK (e.g., 404 or 500 errors)
+      if (!response.ok) {
+        throw new Error("Failed to fetch game state");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (data.success) {
+        console.log("Game state loaded:", data.game_state);
+        updateBoardFromState(data.game_state);
+      } else {
+        console.error("Error loading game state:", data.error);
+        const initialState = loadGameState(); // Fallback to localStorage
+        updateBoardFromState(initialState);
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching game state:", error);
+      const initialState = loadGameState(); // Fallback to localStorage
+      updateBoardFromState(initialState);
+    });
+}
+
+function saveGameStateToAPI(gameState) {
+  console.log("Saving game state:", gameState); // Log game state
+  fetch("save_game_state.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ game_state: gameState }),
+  })
+    .then((response) => {
+      // Check if response is not OK (e.g., 404 or 500 errors)
+      if (!response.ok) {
+        throw new Error("Failed to save game state");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (data.success) {
+        console.log("Game state saved successfully");
+      } else {
+        console.error("Error saving game state:", data.error);
+      }
+    })
+    .catch((error) => {
+      console.error("Error saving game state:", error);
+    });
+}
+
 // Listen for changes in localStorage to synchronize the game state
 window.addEventListener("storage", (event) => {
   if (event.key === "gameState") {
@@ -365,22 +443,61 @@ window.addEventListener("storage", (event) => {
       updateBoardFromState(newState);
     }
   }
+
+  if (event.key === "redScore" || event.key === "blueScore") {
+    // Update displayed scores when localStorage changes
+    const redScore = localStorage.getItem("redScore") || 0;
+    const blueScore = localStorage.getItem("blueScore") || 0;
+
+    document.getElementById("red-score").textContent = redScore;
+    document.getElementById("blue-score").textContent = blueScore;
+  }
 });
 
-// Listen for page load events
-// Listen for page load events
 document.addEventListener("DOMContentLoaded", () => {
   const resetButton = document.getElementById("reset-game");
+  const resetScoresButton = document.getElementById("score-zero");
+
+  // Load the scores from localStorage
+  const savedRedScore = localStorage.getItem("redScore");
+  const savedBlueScore = localStorage.getItem("blueScore");
+
+  if (savedRedScore !== null) {
+    document.getElementById("red-score").textContent = savedRedScore;
+  }
+
+  if (savedBlueScore !== null) {
+    document.getElementById("blue-score").textContent = savedBlueScore;
+  }
 
   if (resetButton) {
     resetButton.addEventListener("click", () => {
       console.log("Resetting game state...");
       localStorage.removeItem("gameState");
       alert("Game state cleared. Reloading the game.");
-      location.reload(); // Reload to clear the board and scores
+      location.reload();
     });
   } else {
     console.error("Reset button not found in DOM.");
+  }
+
+  // Reset Scores functionality
+  if (resetButton) {
+    resetButton.addEventListener("click", () => {
+      console.log("Resetting game state...");
+      localStorage.removeItem("gameState");
+      alert("Game state cleared. Reloading the game.");
+      location.reload();
+    });
+  } else {
+    console.error("Reset button not found in DOM.");
+  }
+
+  // Reset Scores functionality
+  if (resetScoresButton) {
+    resetScoresButton.addEventListener("click", resetScores);
+  } else {
+    console.error("Reset Scores button not found in DOM.");
   }
 
   // Setup player side
@@ -389,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!playerSide) {
     alert("No side selected or invalid session! Redirecting...");
-    window.location.href = "player.html"; // Redirect to the player selection page
+    window.location.href = "player.html";
     return;
   }
 
@@ -399,7 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ).textContent = `Playing as: ${playerSide.toUpperCase()}`;
 
   createGameBoard(7, 7, playerSide); // Create the game board
-
+  loadGameStateFromAPI();
   const gameState = loadGameState();
   updateBoardFromState(gameState);
 });
