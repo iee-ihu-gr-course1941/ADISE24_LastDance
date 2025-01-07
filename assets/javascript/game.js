@@ -196,30 +196,37 @@ function convertAdjacentPawns(destIndex, currentPlayer, gameState) {
   saveGameState(gameState);
 }
 
+let gameOver = false;
+
 // Check if there is a winner based on the game state
 function checkWinningConditions(gameState) {
   const totalCells = 7 * 7; // Fixed 7x7 board
   const redPawnsCount = gameState.redPawns.length;
   const bluePawnsCount = gameState.bluePawns.length;
 
-  // Condition 1: Board is filled, the player with most pawns wins
   if (redPawnsCount + bluePawnsCount === totalCells) {
     const winner = redPawnsCount > bluePawnsCount ? "red" : "blue";
     updateScoresAndDisplayWinner(winner);
-    return true; // Stop the game
+    gameOver = true; // Set gameOver flag
+    disableMoves(); // Prevent further interactions
+    return true;
   }
 
-  // Condition 2: One player has captured all of the opponent's pawns
   if (redPawnsCount === 0) {
     updateScoresAndDisplayWinner("blue");
-    return true; // Stop the game
-  }
-  if (bluePawnsCount === 0) {
-    updateScoresAndDisplayWinner("red");
-    return true; // Stop the game
+    gameOver = true;
+    disableMoves();
+    return true;
   }
 
-  return false; // Game continues
+  if (bluePawnsCount === 0) {
+    updateScoresAndDisplayWinner("red");
+    gameOver = true;
+    disableMoves();
+    return true;
+  }
+
+  return false;
 }
 
 // Update the UI with the score and display the winner
@@ -270,6 +277,11 @@ function resetScores() {
 }
 
 function handleCellClick(cell) {
+  if (gameOver) {
+    alert("Game over! Please reset to start a new game.");
+    return;
+  }
+
   const gameState = loadGameState();
   saveGameStateToAPI(gameState);
   const index = parseInt(cell.dataset.index, 10);
@@ -441,6 +453,14 @@ window.addEventListener("storage", (event) => {
       const newState = JSON.parse(event.newValue);
       console.log("Game state change detected:", newState);
       updateBoardFromState(newState);
+    }
+  }
+
+  if (event.key === "gameOver") {
+    gameOver = event.newValue === "true";
+    if (gameOver) {
+      disableMoves();
+      alert("Game over! Reload to start a new game.");
     }
   }
 
