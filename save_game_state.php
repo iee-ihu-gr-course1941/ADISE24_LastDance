@@ -20,6 +20,7 @@ $bluePawns = json_encode($gameState['bluePawns']);
 
 $currentTurn = (int) $gameState['currentTurn']; 
 
+
 $sql = "INSERT INTO game_state (red_pawns, blue_pawns, current_turn) 
         VALUES (?, ?, ?)
         ON DUPLICATE KEY UPDATE 
@@ -29,13 +30,15 @@ $sql = "INSERT INTO game_state (red_pawns, blue_pawns, current_turn)
 
 $stmt = mysqli_prepare($conn, $sql);
 
-if ($stmt === false) {
+// Check for errors with statement preparation
+if (!$stmt = mysqli_prepare($conn, $sql)) {
     echo json_encode(["success" => false, "error" => "Failed to prepare statement: " . mysqli_error($conn)]);
     exit;
 }
+// Now bind the parameters. There are 6 parameters in total.
+mysqli_stmt_bind_param($stmt, 'ssssss', $redPawns, $bluePawns, $currentTurn, $redPawns, $bluePawns, $currentTurn);
 
-mysqli_stmt_bind_param($stmt, 'ssiiii', $redPawns, $bluePawns, $currentTurn, $redPawns, $bluePawns, $currentTurn);
-
+// Execute the query and check if it was successful
 if (mysqli_stmt_execute($stmt)) {
     echo json_encode(["success" => true]);
 } else {
@@ -44,4 +47,3 @@ if (mysqli_stmt_execute($stmt)) {
 
 mysqli_stmt_close($stmt);
 mysqli_close($conn);
-?>

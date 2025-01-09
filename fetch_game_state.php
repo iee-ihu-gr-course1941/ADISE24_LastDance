@@ -13,11 +13,18 @@ if ($result && mysqli_num_rows($result) > 0) {
     $gameState = mysqli_fetch_assoc($result);
     $gameState['red_pawns'] = json_decode($gameState['red_pawns']);
     $gameState['blue_pawns'] = json_decode($gameState['blue_pawns']);
-    
-    echo json_encode(["success" => true, "game_state" => $gameState]);
 } else {
-    echo json_encode(["success" => false, "error" => "No game state found or error fetching data."]);
+    $gameState = [
+        'red_pawns' => [0, 48],
+        'blue_pawns' => [6, 42],
+        'current_turn' => 'red',
+        'red_score' => 0,
+        'blue_score' => 0,
+    ];
 }
 
+echo json_encode(["success" => true, "game_state" => $gameState]);
+
 mysqli_close($conn);
-?>
+?> 
+
