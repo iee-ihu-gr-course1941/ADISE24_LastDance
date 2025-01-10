@@ -94,7 +94,7 @@ The API manages session data and game state persistence efficiently, enabling se
 
 - Pawns can move: 
 
-  - One or two spaces orthogonally or diagonally. 
+  - One or two spaces adjacent to their starting cell. 
 
 - After moving: 
 
