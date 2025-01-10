@@ -38,7 +38,13 @@ Welcome to **Attax**, a strategic two-player game developed as part of our semes
 
 - **JavaScript**: Powers game logic, side selection, and user interactions. 
 
-- **PHP**: Handles server-side session management via API integration. 
+- **PHP**: Handles server-side session management via API integration and login system. 
+
+- **AJAX and JQuery**: Making asynchronous requests to fetch and save game state.
+
+- **MySQL**: Database containing the schemas of the user and game state.
+
+
 
 --- 
 
