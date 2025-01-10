@@ -64,7 +64,6 @@ function mapApiToGameState(apiState) {
     currentTurn: apiState.current_turn === "0" ? "red" : "blue",
     redScore: apiState.red_score || 0,
     blueScore: apiState.blue_score || 0,
-    // Other fields as needed
   };
 }
 
@@ -199,14 +198,21 @@ function checkWinningConditions(gameState) {
   if (redPawnsCount + bluePawnsCount === totalCells) {
     const winner = redPawnsCount > bluePawnsCount ? "red" : "blue";
     updateScoresAndDisplayWinner(winner);
-    gameOver = true; // Set gameOver flag
-    disableMoves(); // Prevent further interactions
+    gameOver = true;
+    localStorage.setItem("gameOver", "true"); // Set gameOver flag
+    saveGameState(gameState);
+    saveGameStateToAPI(gameState); // Save game state even if it's won
+    disableMoves(); // Prevent further interactions for both players
+
     return true;
   }
 
   if (redPawnsCount === 0) {
     updateScoresAndDisplayWinner("blue");
     gameOver = true;
+    localStorage.setItem("gameOver", "true");
+    saveGameState(gameState);
+    saveGameStateToAPI(gameState); // Save game state even if it's won
     disableMoves();
     return true;
   }
@@ -214,6 +220,9 @@ function checkWinningConditions(gameState) {
   if (bluePawnsCount === 0) {
     updateScoresAndDisplayWinner("red");
     gameOver = true;
+    localStorage.setItem("gameOver", "true");
+    saveGameState(gameState);
+    saveGameStateToAPI(gameState); // Save game state even if it's won
     disableMoves();
     return true;
   }
@@ -221,35 +230,41 @@ function checkWinningConditions(gameState) {
   return false;
 }
 
-// Update the UI with the score and display the winner
 function updateScoresAndDisplayWinner(winner) {
   const redScoreElement = document.getElementById("red-score");
   const blueScoreElement = document.getElementById("blue-score");
 
-  // Update scores and display winner message
   if (winner === "red") {
     alert("Red wins the game! Congratulations!");
     redScoreElement.textContent = parseInt(redScoreElement.textContent) + 1;
+    alert("Blue loses the game.");
+    blueScoreElement.textContent = parseInt(blueScoreElement.textContent);
   } else if (winner === "blue") {
     alert("Blue wins the game! Congratulations!");
     blueScoreElement.textContent = parseInt(blueScoreElement.textContent) + 1;
+    alert("Red loses the game.");
+    redScoreElement.textContent = parseInt(redScoreElement.textContent);
   }
 
-  // Save updated scores in localStorage
+  // Update scores in localStorage
   const redScore = parseInt(redScoreElement.textContent);
   const blueScore = parseInt(blueScoreElement.textContent);
 
-  // Store in localStorage
   localStorage.setItem("redScore", redScore);
   localStorage.setItem("blueScore", blueScore);
 
+  // Disable all game moves after the game ends
   disableMoves();
 }
 
 // Function to disable further moves after the game ends
 function disableMoves() {
-  const cells = document.querySelectorAll(".game-cell");
-  cells.forEach((cell) => cell.removeEventListener("click", handleCellClick));
+  // Disable clicking or making any further moves on cells once the game is over
+  const cells = document.querySelectorAll(".cell");
+  cells.forEach((cell) => {
+    cell.classList.add("disabled");
+    cell.removeEventListener("click", handleCellClick);
+  });
 }
 
 function resetScores() {
@@ -257,14 +272,12 @@ function resetScores() {
   localStorage.setItem("redScore", 0);
   localStorage.setItem("blueScore", 0);
 
-  // Update the score display elements
   const redScoreElement = document.getElementById("red-score");
   const blueScoreElement = document.getElementById("blue-score");
 
   redScoreElement.textContent = 0;
   blueScoreElement.textContent = 0;
 
-  // Display reset confirmation
   alert("Scores have been reset to 0.");
 }
 
@@ -277,13 +290,11 @@ function handleCellClick(cell) {
   const gameState = loadGameState();
   const index = parseInt(cell.dataset.index, 10);
 
-  // Ensure the game is not over before proceeding
   if (checkWinningConditions(gameState)) {
-    return; // Exit if the game is over
+    return;
   }
 
   if (selectedCell === null) {
-    // Select a pawn if it matches the current player's side
     if (
       cell.firstChild &&
       cell.firstChild.classList.contains(gameState.currentTurn) &&
@@ -306,11 +317,9 @@ function handleCellClick(cell) {
       !cell.firstChild // Ensure the destination is empty
     ) {
       if (distance === 1) {
-        // Adjacent move
         const newPawn = createPawn(gameState.currentTurn);
         cell.appendChild(newPawn);
       } else if (distance === 2) {
-        // Two-space move
         cell.appendChild(selectedCell.firstChild);
       } else {
         alert("Invalid move! You can only move one or two spaces.");
@@ -318,29 +327,24 @@ function handleCellClick(cell) {
         return;
       }
 
-      // Convert adjacent opponent pawns (after move)
       convertAdjacentPawns(index, gameState.currentTurn, gameState);
 
-      // Check for any winning conditions after the move
       if (checkWinningConditions(gameState)) {
-        return; // Exit if the game is over
+        return;
       }
 
-      // Switch turns
       gameState.currentTurn = gameState.currentTurn === "red" ? "blue" : "red";
 
-      // Check if the next player has legal moves
       if (!hasLegalMoves(gameState.currentTurn, gameState)) {
         alert(
           `${gameState.currentTurn.toUpperCase()} has no legal moves and passes the turn.`
         );
         gameState.currentTurn =
-          gameState.currentTurn === "red" ? "blue" : "red"; // Pass the turn if no moves are available
+          gameState.currentTurn === "red" ? "blue" : "red";
       }
 
-      // Save the updated state and update the board
       saveGameState(gameState);
-      saveGameStateToAPI(gameState); // Call save API here
+      saveGameStateToAPI(gameState);
       updateBoardFromState(gameState);
       clearSelection();
     } else {
@@ -402,7 +406,7 @@ function loadGameStateFromAPI() {
         updateBoardFromState(defaultState);
       }
     },
-    error: function (jqXHR, textStatus, errorThrown) {
+    error: function (errorThrown) {
       console.error("Error fetching game state:", errorThrown);
       const defaultState = {
         redPawns: [0, 48],
@@ -426,6 +430,8 @@ function saveGameStateToAPI(gameState) {
     currentTurn: numericTurn,
   };
 
+  console.log("Saving game state:", stateToSave); // Log the state to be saved.
+
   $.ajax({
     url: "save_game_state.php",
     method: "POST",
@@ -445,13 +451,12 @@ function saveGameStateToAPI(gameState) {
   });
 }
 
-// Listen for changes in localStorage to synchronize the game state
 window.addEventListener("storage", (event) => {
   if (event.key === "gameState") {
     const currentState = loadGameState();
     if (!event.newValue || event.newValue === JSON.stringify(currentState)) {
       console.log("No significant change detected in game state. Ignoring.");
-      return; // Ignore redundant updates
+      return;
     }
 
     const newState = JSON.parse(event.newValue);
@@ -460,8 +465,15 @@ window.addEventListener("storage", (event) => {
   }
 
   if (event.key === "gameOver") {
+    // Log event to confirm if it's triggering when it should
+    console.log(`gameOver event triggered: ${event.newValue}`);
+
     gameOver = event.newValue === "true";
+
     if (gameOver) {
+      const gameState = JSON.parse(localStorage.getItem("gameState")) || {};
+      console.log(gameState);
+      loadGameStateFromAPI(gameState);
       disableMoves();
       alert("Game over! Reload to start a new game.");
     }
